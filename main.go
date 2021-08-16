@@ -31,8 +31,8 @@ func main() {
 
 	if mode == "--prepare" {
 		fmt.Println("Writing copy description", len(images))
-		current_time := time.Now()
-		err = file.PrepareCopy(target, images, "copy_desc_"+current_time.Format("2006-01-02-15:04:05")+".json")
+		currentTime := time.Now()
+		err = file.PrepareCopy(target, images, "copy_desc_"+currentTime.Format("2006-01-02-15:04:05")+".json")
 		if err != nil {
 			panic(err)
 		}
