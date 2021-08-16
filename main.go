@@ -17,8 +17,11 @@ func main() {
 
 	var images []model.FileInfo
 	var supportedFileEndings []string = []string{".png", ".jpeg", ".jpg", ".gif"}
+	var excludedDirs []string = []string{"Android/Data", ".thumbnails", "WhatsApp/.Shared", "WhatsApp/Media/.Statuses", "WhatsApp/.Thumbs"}
 
-	err := file.CollectFiles(source, &images, &supportedFileEndings)
+	var collectFilesConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: excludedDirs, SupportedExtensions: supportedFileEndings}
+
+	err := file.CollectFiles(source, &images, collectFilesConfig)
 	if err != nil {
 		panic(err)
 	}
