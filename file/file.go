@@ -14,14 +14,28 @@ import (
 	"strings"
 )
 
-//Visit returns a function which collects all fileInfos having the correct file extension
-func visit(files *[]model.FileInfo, supportedExtensions *[]string) filepath.WalkFunc {
+//CollectFilesConfig describes the configuration for the CollectFiles function
+type CollectFilesConfig struct {
+	ExcludedDirs        []string
+	SupportedExtensions []string
+}
+
+//visit returns a function which collects all fileInfos having the correct file extension
+func visit(files *[]model.FileInfo, collectFilesConfig CollectFilesConfig) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		if !utils.ItemExists(*supportedExtensions, strings.ToLower(filepath.Ext(path))) || info.IsDir() {
+		// we skip the dir if it is included in the Excluded dirs
+		if info.IsDir() {
+			for _, excludedDir := range collectFilesConfig.ExcludedDirs {
+				if strings.Contains(strings.ToLower(path), strings.ToLower(excludedDir)) {
+					return filepath.SkipDir
+				}
+			}
+		}
+		// if the file does not match the  supported extensions or it is a dir we just return
+		if !utils.ItemExists(collectFilesConfig.SupportedExtensions, strings.ToLower(filepath.Ext(path))) || info.IsDir() {
 			return nil
 		}
 		var currentImage = model.FileInfo{Path: path, CreatedMonth: info.ModTime().Month(), CreateYear: info.ModTime().Year()}
@@ -30,10 +44,12 @@ func visit(files *[]model.FileInfo, supportedExtensions *[]string) filepath.Walk
 	}
 }
 
-func CollectFiles(rootDir string, files *[]model.FileInfo, supportedExtensions *[]string) error {
-	return filepath.Walk(rootDir, visit(files, supportedExtensions))
+// CollectFiles collects all files according to the given collectFilesConfig in the provided files array
+func CollectFiles(rootDir string, files *[]model.FileInfo, collectFilesConfig CollectFilesConfig) error {
+	return filepath.Walk(rootDir, visit(files, collectFilesConfig))
 }
 
+// PrepareCopy creates a a json file according to model.FileCopyDescription describing all file copy actions
 func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName string) error {
 	copiedFileNames := make(map[string]int)
 
@@ -65,6 +81,7 @@ func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName st
 	return err
 }
 
+//CopyFilesTo copies all filesToCopy to the targetDir
 func CopyFilesTo(targetDir string, filesToCopy []model.FileInfo) error {
 	copiedFileNames := make(map[string]int)
 
@@ -102,6 +119,7 @@ func CopyFilesTo(targetDir string, filesToCopy []model.FileInfo) error {
 	return nil
 }
 
+//DeleteFiles removes all filesToDelete from the system
 func DeleteFiles(filesToDelete []model.FileInfo) error {
 	for _, fileToRemove := range filesToDelete {
 		e := os.Remove(fileToRemove.Path)

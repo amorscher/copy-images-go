@@ -15,15 +15,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var basicExtensions = []string{".png", ".jpg", ".jpeg", ".gif"}
+
+var basicCollectConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: []string{}, SupportedExtensions: basicExtensions}
+
 func TestThatFilesCanBeFoundInFlatDir(t *testing.T) {
 
 	//GIVEN
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
 
 	//WHEN
-	var result = file.CollectFiles("../test-data/subdir/subsubdir", &filesToCopy, &testExtensions)
+	var result = file.CollectFiles("../test-data/subdir/subsubdir", &filesToCopy, basicCollectConfig)
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
@@ -36,14 +39,64 @@ func TestThatFilesCanBeFoundInNestedDir(t *testing.T) {
 	//GIVEN
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
 
 	//WHEN
-	var result = file.CollectFiles("../test-data", &filesToCopy, &testExtensions)
+	var result = file.CollectFiles("../test-data", &filesToCopy, basicCollectConfig)
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
 	assert.Equal(t, 12, len(filesToCopy), "12 Files Must be found")
+
+}
+
+func TestThatExcludedDirsAreIgnored(t *testing.T) {
+
+	//GIVEN
+	fmt.Println(os.Getwd())
+	var filesToCopy []model.FileInfo
+
+	var collectFilesConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: []string{"subdir"}, SupportedExtensions: basicExtensions}
+
+	//WHEN
+	var result = file.CollectFiles("../test-data", &filesToCopy, collectFilesConfig)
+
+	//THEN
+	assert.Nil(t, result, "No error must be thrown")
+	assert.Equal(t, 4, len(filesToCopy), "Only 4 Files Must be found as subdir should be ignored!")
+
+}
+
+func TestThatExcludedDirsCanIncludePaths(t *testing.T) {
+
+	//GIVEN
+	fmt.Println(os.Getwd())
+	var filesToCopy []model.FileInfo
+
+	var collectFilesConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: []string{"subdir/subsubdir"}, SupportedExtensions: basicExtensions}
+
+	//WHEN
+	var result = file.CollectFiles("../test-data", &filesToCopy, collectFilesConfig)
+
+	//THEN
+	assert.Nil(t, result, "No error must be thrown")
+	assert.Equal(t, 8, len(filesToCopy), "Only 8 Files Must be found as subdir/subsubdir should be ignored!")
+
+}
+
+func TestThatExcludedDirsMatchesInCaseSensitive(t *testing.T) {
+
+	//GIVEN
+	fmt.Println(os.Getwd())
+	var filesToCopy []model.FileInfo
+	caseSensitiveDir := "Subdir/subSubDir"
+	var collectFilesConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: []string{caseSensitiveDir}, SupportedExtensions: basicExtensions}
+
+	//WHEN
+	var result = file.CollectFiles("../test-data", &filesToCopy, collectFilesConfig)
+
+	//THEN
+	assert.Nil(t, result, "No error must be thrown")
+	assert.Equal(t, 8, len(filesToCopy), "Only 8 Files Must be found as Subdir/subSubDir should be ignored!")
 
 }
 
@@ -53,10 +106,9 @@ func TestThatCorrectPathIsAttached(t *testing.T) {
 	const testDir string = "../test-data/subdir/subsubdir"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
 
 	//WHEN
-	var result = file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	var result = file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
@@ -73,10 +125,9 @@ func TestThatCorrectDateIsAttached(t *testing.T) {
 	const testDir string = "../test-data/subdir/subsubdir"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
 
 	//WHEN
-	var result = file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	var result = file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
@@ -91,8 +142,7 @@ func TestThatFilesAreCopiedToTargetDir(t *testing.T) {
 	const testDir string = "../test-data/subdir/subsubdir"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
-	file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
 
 	//WHEN
@@ -101,7 +151,7 @@ func TestThatFilesAreCopiedToTargetDir(t *testing.T) {
 	//THEN
 	var copiedFiles []model.FileInfo
 	assert.Nil(t, result, "No error must be thrown")
-	file.CollectFiles(tempDir, &copiedFiles, &testExtensions)
+	file.CollectFiles(tempDir, &copiedFiles, basicCollectConfig)
 	assert.Equal(t, 4, len(copiedFiles), "All 4 files must be copied")
 
 }
@@ -112,8 +162,7 @@ func TestThatFilesAreCopiedAndSortedAccordingToCreationDate(t *testing.T) {
 	const testDir string = "../test-data/subdir/subsubdir"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
-	file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
 
 	//WHEN
@@ -122,7 +171,7 @@ func TestThatFilesAreCopiedAndSortedAccordingToCreationDate(t *testing.T) {
 	//THEN
 	var copiedFiles []model.FileInfo
 	assert.Nil(t, result, "No error must be thrown")
-	file.CollectFiles(tempDir, &copiedFiles, &testExtensions)
+	file.CollectFiles(tempDir, &copiedFiles, basicCollectConfig)
 	assert.Equal(t, 4, len(copiedFiles), "All 4 files must be copied")
 	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.gif"), copiedFiles[0].Path)
 	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.jpeg"), copiedFiles[1].Path)
@@ -137,8 +186,7 @@ func TestCopyFilesWithEqualFileNames(t *testing.T) {
 	const testDir string = "../test-data"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
-	file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
 
 	//WHEN
@@ -147,7 +195,7 @@ func TestCopyFilesWithEqualFileNames(t *testing.T) {
 	//THEN
 	var copiedFiles []model.FileInfo
 	assert.Nil(t, result, "No error must be thrown")
-	file.CollectFiles(tempDir, &copiedFiles, &testExtensions)
+	file.CollectFiles(tempDir, &copiedFiles, basicCollectConfig)
 	assert.Equal(t, 12, len(copiedFiles), "All 12 files must be copied")
 	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.gif"), copiedFiles[0].Path)
 	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.jpeg"), copiedFiles[1].Path)
@@ -157,20 +205,19 @@ func TestCopyFilesWithEqualFileNames(t *testing.T) {
 
 }
 
-func TestDeleteFilesRemovesFilesFormFileSystem(t *testing.T) {
+func TestDeleteFilesRemovesFilesFromFileSystem(t *testing.T) {
 
 	//GIVEN
 	const testDir string = "../test-data"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
-	file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
 	//copy to temp dir
 	file.CopyFilesTo(tempDir, filesToCopy)
 	var copiedFiles []model.FileInfo
 	//find all the files
-	file.CollectFiles(tempDir, &copiedFiles, &testExtensions)
+	file.CollectFiles(tempDir, &copiedFiles, basicCollectConfig)
 
 	//WHEN
 	//remove them
@@ -178,7 +225,7 @@ func TestDeleteFilesRemovesFilesFormFileSystem(t *testing.T) {
 
 	//THEN
 	var emptyFiles []model.FileInfo
-	file.CollectFiles(tempDir, &emptyFiles, &testExtensions)
+	file.CollectFiles(tempDir, &emptyFiles, basicCollectConfig)
 
 	assert.Equal(t, 0, len(emptyFiles), "All files must be deleted")
 
@@ -190,8 +237,7 @@ func TestPerpareCopyCreatesDescJson(t *testing.T) {
 	const testDir string = "../test-data/subdir/subsubdir"
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
-	file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
 
 	//WHEN
@@ -210,8 +256,7 @@ func TestPerpareCopyCreatesDescJsonWithCorrectCopyDescs(t *testing.T) {
 	anbsoluteTestDir, _ := filepath.Abs(testDir)
 	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
-	var testExtensions []string = []string{".png", ".jpg", ".jpeg", ".gif"}
-	file.CollectFiles(testDir, &filesToCopy, &testExtensions)
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
 
 	//WHEN
