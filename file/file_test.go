@@ -79,7 +79,7 @@ func TestThatExcludedDirsCanIncludePaths(t *testing.T) {
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
-	assert.Equal(t, 8, len(filesToCopy), "Only 8 Files Must be found as subdir/subsubdir should be ignored!")
+	assert.Equal(t, 10, len(filesToCopy), "Only 8 Files Must be found as subdir/subsubdir should be ignored!")
 
 }
 
