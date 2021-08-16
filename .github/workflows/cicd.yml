@@ -60,7 +60,7 @@ jobs:
       - name: Run vet & lint
         run: |
           go vet .
-          golint .
+          golint -set_exit_status .
     
   test:
     name: Run Test 
