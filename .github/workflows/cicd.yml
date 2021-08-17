@@ -37,6 +37,13 @@ jobs:
     - name: Run build
       run: go build . 
 
+    # upload the build artefact
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: copy-images
+        path: copy-images
+
   lint:
     name: lint 
     runs-on: ubuntu-latest
