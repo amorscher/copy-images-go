@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //CollectFilesConfig describes the configuration for the CollectFiles function
@@ -38,7 +39,7 @@ func visit(files *[]model.FileInfo, collectFilesConfig CollectFilesConfig) filep
 		if !utils.ItemExists(collectFilesConfig.SupportedExtensions, strings.ToLower(filepath.Ext(path))) || info.IsDir() {
 			return nil
 		}
-		var currentImage = model.FileInfo{Path: path, CreatedMonth: info.ModTime().Month(), CreateYear: info.ModTime().Year()}
+		var currentImage = model.FileInfo{Path: path, CreationDate: info.ModTime()}
 		*files = append(*files, currentImage)
 		return nil
 	}
@@ -55,8 +56,9 @@ func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName st
 
 	copyDescription := model.FileCopyDescription{Copies: make([]model.FileCopy, 0)}
 	for _, fileToCopy := range filesToCopy {
-
-		pathWithCreationDate := path.Join(strconv.Itoa(fileToCopy.CreateYear), fileToCopy.CreatedMonth.String())
+		var createionYear int = fileToCopy.CreationDate.Year()
+		var creationMonth time.Month = fileToCopy.CreationDate.Month()
+		pathWithCreationDate := path.Join(strconv.Itoa(createionYear), creationMonth.String())
 		destinationPath := path.Join(targetDir, pathWithCreationDate)
 
 		fileName := path.Base(fileToCopy.Path)
@@ -93,8 +95,10 @@ func CopyFilesTo(targetDir string, filesToCopy []model.FileInfo) error {
 			return err
 		}
 		fmt.Printf("Copying %d/%d %s ... \n", (index + 1), numberOfImagesToCopy, fileToCopy.Path)
+		var createionYear int = fileToCopy.CreationDate.Year()
+		var creationMonth time.Month = fileToCopy.CreationDate.Month()
 
-		pathWithCreationDate := path.Join(strconv.Itoa(fileToCopy.CreateYear), fileToCopy.CreatedMonth.String())
+		pathWithCreationDate := path.Join(strconv.Itoa(createionYear), creationMonth.String())
 		destinationPath := path.Join(targetDir, pathWithCreationDate)
 
 		//create the destination path
@@ -119,13 +123,31 @@ func CopyFilesTo(targetDir string, filesToCopy []model.FileInfo) error {
 	return nil
 }
 
-//DeleteFiles removes all filesToDelete from the system
-func DeleteFiles(filesToDelete []model.FileInfo) error {
-	for _, fileToRemove := range filesToDelete {
+//DeleteFiles removes all files from the system
+func DeleteFiles(files []model.FileInfo) error {
+	numberOfFilesToDelete := len(files)
+	for index, fileToRemove := range files {
+		fmt.Printf("Removing %d/%d %s ... \n", (index + 1), numberOfFilesToDelete, fileToRemove.Path)
 		e := os.Remove(fileToRemove.Path)
 		if e != nil {
 			log.Fatal(e)
 		}
 	}
 	return nil
+}
+
+// DeleteFilesCreatedBefore removes all files form the filesystem which have a creation date smaller than provided cutoffDate
+func DeleteFilesCreatedBefore(cutoffDate time.Time, files []model.FileInfo) []model.FileInfo {
+	//filter the files
+	var filteredFiles []model.FileInfo
+
+	for _, file := range files {
+		if file.CreationDate.Before(cutoffDate) {
+			filteredFiles = append(filteredFiles, file)
+		}
+	}
+	//ok now delete the files
+	DeleteFiles(filteredFiles)
+
+	return filteredFiles
 }

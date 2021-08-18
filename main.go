@@ -3,6 +3,7 @@ package main
 import (
 	"copy-images/file"
 	"copy-images/model"
+	"copy-images/utils"
 	"fmt"
 	"os"
 	"time"
@@ -29,6 +30,7 @@ func main() {
 		fmt.Println(file)
 	}
 
+	//TODO: use cli parser
 	if mode == "--prepare" {
 		fmt.Println("Writing copy description", len(images))
 		currentTime := time.Now()
@@ -48,6 +50,20 @@ func main() {
 		}
 
 		fmt.Println("Copied all files:", len(images))
+	}
+
+	if mode == "--copyDelete" {
+		//copy the files to the target
+		err = file.CopyFilesTo(target, images)
+		var cutoffDate time.Time = utils.RemoveMonths(time.Now(), 2)
+
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Copied all files:", len(images))
+		var deletedFiles []model.FileInfo = file.DeleteFilesCreatedBefore(cutoffDate, images)
+		fmt.Println("Deleted files:", len(deletedFiles))
 	}
 
 }

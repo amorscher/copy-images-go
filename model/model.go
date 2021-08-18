@@ -5,8 +5,7 @@ import "time"
 //FileInfo represents a File to copy
 type FileInfo struct {
 	Path         string
-	CreatedMonth time.Month
-	CreateYear   int
+	CreationDate time.Time
 }
 
 type FileCopyDescription struct {
