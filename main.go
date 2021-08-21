@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+//TODO:
+// - use cli parser
+// - proper error handling
+// - logging
+
 func main() {
 
 	argsWithoutProg := os.Args[1:]

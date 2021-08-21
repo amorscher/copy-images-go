@@ -123,14 +123,15 @@ func CopyFilesTo(targetDir string, filesToCopy []model.FileInfo) error {
 	return nil
 }
 
-//DeleteFiles removes all files from the system
+//DeleteFiles removes all given files from the file-system
 func DeleteFiles(files []model.FileInfo) error {
 	numberOfFilesToDelete := len(files)
 	for index, fileToRemove := range files {
 		fmt.Printf("Removing %d/%d %s ... \n", (index + 1), numberOfFilesToDelete, fileToRemove.Path)
 		e := os.Remove(fileToRemove.Path)
 		if e != nil {
-			log.Fatal(e)
+			//if we cannot delete just print a log
+			log.Print(e)
 		}
 	}
 	return nil
@@ -138,7 +139,7 @@ func DeleteFiles(files []model.FileInfo) error {
 
 // DeleteFilesCreatedBefore removes all files form the filesystem which have a creation date smaller than provided cutoffDate
 func DeleteFilesCreatedBefore(cutoffDate time.Time, files []model.FileInfo) []model.FileInfo {
-	//filter the files
+	//filter the files matching the cutoffDate
 	var filteredFiles []model.FileInfo
 
 	for _, file := range files {
