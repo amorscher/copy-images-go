@@ -50,11 +50,12 @@ func CollectFiles(rootDir string, files *[]model.FileInfo, collectFilesConfig Co
 	return filepath.Walk(rootDir, visit(files, collectFilesConfig))
 }
 
-// PrepareCopy creates a a json file according to model.FileCopyDescription describing all file copy actions
-func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName string) error {
+// PrepareCopy creates a a json file according to model.FileOperations
+// describing all file file operations which would be performend by a real copy
+func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName string, cutoffDate time.Time) error {
 	copiedFileNames := make(map[string]int)
 
-	copyDescription := model.FileCopyDescription{Copies: make([]model.FileCopy, 0)}
+	copyDescription := model.FileOperations{FileOperations: make([]model.FileOperation, 0)}
 	for _, fileToCopy := range filesToCopy {
 		var createionYear int = fileToCopy.CreationDate.Year()
 		var creationMonth time.Month = fileToCopy.CreationDate.Month()
@@ -69,8 +70,18 @@ func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName st
 		} else {
 			copiedFileNames[path.Base(fileToCopy.Path)] = 0
 		}
-		absolutepath, _ := filepath.Abs(fileToCopy.Path)
-		copyDescription.Copies = append(copyDescription.Copies, model.FileCopy{From: absolutepath, To: path.Join(destinationPath, fileName)})
+		absolutePath, _ := filepath.Abs(fileToCopy.Path)
+
+		// determine the action type of the operation
+		opType := operationType(fileToCopy, cutoffDate)
+
+		copyDescription.FileOperations = append(
+			copyDescription.FileOperations,
+			model.FileOperation{
+				From:   absolutePath,
+				To:     path.Join(destinationPath, fileName),
+				OpType: opType,
+			})
 
 	}
 	//lets write the json
@@ -81,6 +92,15 @@ func PrepareCopy(targetDir string, filesToCopy []model.FileInfo, descFileName st
 	fmt.Println(path.Join(targetDir, descFileName) + " written!")
 
 	return err
+}
+
+//operationType returns the a valid model.ActionType according to the cutoffDate. All files created on and after the cutoffDate will be copied
+func operationType(fileInfo model.FileInfo, cutoffDate time.Time) model.OpType {
+
+	if fileInfo.CreationDate.Before(cutoffDate) {
+		return model.MoveOp
+	}
+	return model.CopyOp
 }
 
 //CopyFilesTo copies all filesToCopy to the targetDir

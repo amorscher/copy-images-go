@@ -340,7 +340,7 @@ func TestDeleteFilesRemovesFilesFromFileSystemCreatedBefore_differentYear(t *tes
 	}
 }
 
-func TestPerpareCopyCreatesDescJson(t *testing.T) {
+func TestPerpareCopyCreatesJson(t *testing.T) {
 
 	//GIVEN
 	var testDir string = path.Join(basicTestDir, "subdir", "subsubdir")
@@ -350,7 +350,7 @@ func TestPerpareCopyCreatesDescJson(t *testing.T) {
 	tempDir := t.TempDir()
 
 	//WHEN
-	var result = file.PrepareCopy(tempDir, filesToCopy, "test_desc.json")
+	var result = file.PrepareCopy(tempDir, filesToCopy, "test_desc.json", time.Now())
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
@@ -358,7 +358,7 @@ func TestPerpareCopyCreatesDescJson(t *testing.T) {
 
 }
 
-func TestPerpareCopyCreatesDescJsonWithCorrectCopyDescs(t *testing.T) {
+func TestPerpareCopyCreatesJsonWithCorrectFileOperations(t *testing.T) {
 
 	//GIVEN
 	var testDir string = path.Join(basicTestDir, "subdir", "subsubdir")
@@ -369,25 +369,60 @@ func TestPerpareCopyCreatesDescJsonWithCorrectCopyDescs(t *testing.T) {
 	tempDir := t.TempDir()
 
 	//WHEN
-	var result = file.PrepareCopy(tempDir, filesToCopy, "test_desc.json")
+	var result = file.PrepareCopy(tempDir, filesToCopy, "test_desc.json", time.Now())
 
 	//THEN
 	assert.Nil(t, result, "No error must be thrown")
 	descPath := path.Join(tempDir, "test_desc.json")
 	assert.True(t, fileExists(descPath), "Desc file must exist")
 	input, _ := ioutil.ReadFile(descPath)
-	copyDesc := model.FileCopyDescription{Copies: make([]model.FileCopy, 0)}
+	copyDesc := model.FileOperations{FileOperations: make([]model.FileOperation, 0)}
 	json.Unmarshal(input, &copyDesc)
 	fmt.Println(copyDesc)
-	assert.Equal(t, 4, len(copyDesc.Copies), "4 copy descriptions must be created")
-	assert.Equal(t, path.Join(anbsoluteTestDir, "test.gif"), copyDesc.Copies[0].From)
-	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.gif"), copyDesc.Copies[0].To)
-	assert.Equal(t, path.Join(anbsoluteTestDir, "test.jpeg"), copyDesc.Copies[1].From)
-	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.jpeg"), copyDesc.Copies[1].To)
-	assert.Equal(t, path.Join(anbsoluteTestDir, "test.jpg"), copyDesc.Copies[2].From)
-	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.jpg"), copyDesc.Copies[2].To)
-	assert.Equal(t, path.Join(anbsoluteTestDir, "test.png"), copyDesc.Copies[3].From)
-	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.png"), copyDesc.Copies[3].To)
+	assert.Equal(t, 4, len(copyDesc.FileOperations), "4 copy descriptions must be created")
+	assert.Equal(t, path.Join(anbsoluteTestDir, "test.gif"), copyDesc.FileOperations[0].From)
+	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.gif"), copyDesc.FileOperations[0].To)
+	assert.Equal(t, path.Join(anbsoluteTestDir, "test.jpeg"), copyDesc.FileOperations[1].From)
+	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.jpeg"), copyDesc.FileOperations[1].To)
+	assert.Equal(t, path.Join(anbsoluteTestDir, "test.jpg"), copyDesc.FileOperations[2].From)
+	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.jpg"), copyDesc.FileOperations[2].To)
+	assert.Equal(t, path.Join(anbsoluteTestDir, "test.png"), copyDesc.FileOperations[3].From)
+	assert.Equal(t, path.Join(tempDir, "2021", "August", "test.png"), copyDesc.FileOperations[3].To)
+
+}
+
+func TestPerpareCopyCreatesDescJsonWithCorrectOperationType(t *testing.T) {
+
+	//GIVEN
+	var testDir string = path.Join(basicTestDir, "subdir", "subsubdir")
+	fmt.Println(os.Getwd())
+	var filesToCopy []model.FileInfo
+	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
+	tempDir := t.TempDir()
+	//the date
+	cutoffDate, _ := time.Parse("2006-01-02", "2021-03-03")
+	//manipulate some dates all in the same month
+	//put it on the exact date
+	filesToCopy[0].CreationDate, _ = time.Parse("2006-01-02", "2021-03-02")
+	filesToCopy[1].CreationDate, _ = time.Parse("2006-01-02", "2021-03-01")
+	filesToCopy[2].CreationDate, _ = time.Parse("2006-01-02", "2021-03-03")
+
+	//WHEN
+	var result = file.PrepareCopy(tempDir, filesToCopy, "test_desc.json", cutoffDate)
+
+	//THEN
+	assert.Nil(t, result, "No error must be thrown")
+	descPath := path.Join(tempDir, "test_desc.json")
+	assert.True(t, fileExists(descPath), "Desc file must exist")
+	input, _ := ioutil.ReadFile(descPath)
+	fileOps := model.FileOperations{FileOperations: make([]model.FileOperation, 0)}
+	json.Unmarshal(input, &fileOps)
+	fmt.Println(fileOps)
+	//the ones before the cutoffDate should be moved others should be just copied
+	assert.Equal(t, model.MoveOp, fileOps.FileOperations[0].OpType)
+	assert.Equal(t, model.MoveOp, fileOps.FileOperations[1].OpType)
+	assert.Equal(t, model.CopyOp, fileOps.FileOperations[2].OpType)
+	assert.Equal(t, model.CopyOp, fileOps.FileOperations[3].OpType)
 
 }
 

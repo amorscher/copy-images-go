@@ -35,11 +35,13 @@ func main() {
 		fmt.Println(file)
 	}
 
+	var cutoffDate time.Time = utils.RemoveMonths(time.Now(), 2)
+
 	//TODO: use cli parser
 	if mode == "--prepare" {
-		fmt.Println("Writing copy description", len(images))
+		fmt.Println("Writing file op description", len(images))
 		currentTime := time.Now()
-		err = file.PrepareCopy(target, images, "copy_desc_"+currentTime.Format("2006-01-02-15:04:05")+".json")
+		err = file.PrepareCopy(target, images, "copy_desc_"+currentTime.Format("2006-01-02-15:04:05")+".json", cutoffDate)
 		if err != nil {
 			panic(err)
 		}
@@ -60,7 +62,6 @@ func main() {
 	if mode == "--copyDelete" {
 		//copy the files to the target
 		err = file.CopyFilesTo(target, images)
-		var cutoffDate time.Time = utils.RemoveMonths(time.Now(), 2)
 
 		if err != nil {
 			panic(err)
