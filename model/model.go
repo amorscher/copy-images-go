@@ -5,15 +5,22 @@ import "time"
 //FileInfo represents a File to copy
 type FileInfo struct {
 	Path         string
-	CreatedMonth time.Month
-	CreateYear   int
+	CreationDate time.Time
 }
 
-type FileCopyDescription struct {
-	Copies []FileCopy `json:"copies,omitempty"`
+type FileOperations struct {
+	FileOperations []FileOperation `json:"operations,omitempty"`
 }
 
-type FileCopy struct {
-	From string `json:"from,omitempty"`
-	To   string `json:"to,omitempty"`
+type OpType string
+
+const (
+	MoveOp OpType = "MOVE"
+	CopyOp OpType = "COPY"
+)
+
+type FileOperation struct {
+	From   string `json:"from,omitempty"`
+	To     string `json:"to,omitempty"`
+	OpType OpType `json:"type,omitempty"`
 }
