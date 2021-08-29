@@ -39,7 +39,6 @@ func TestThatFilesCanBeFoundInFlatDir(t *testing.T) {
 func TestThatFilesCanBeFoundInNestedDir(t *testing.T) {
 
 	//GIVEN
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 
 	//WHEN
@@ -54,7 +53,6 @@ func TestThatFilesCanBeFoundInNestedDir(t *testing.T) {
 func TestThatExcludedDirsAreIgnored(t *testing.T) {
 
 	//GIVEN
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 
 	var collectFilesConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: []string{"subdir"}, SupportedExtensions: basicExtensions}
@@ -71,7 +69,6 @@ func TestThatExcludedDirsAreIgnored(t *testing.T) {
 func TestThatExcludedDirsCanIncludePaths(t *testing.T) {
 
 	//GIVEN
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 
 	var collectFilesConfig file.CollectFilesConfig = file.CollectFilesConfig{ExcludedDirs: []string{"subdir/subsubdir"}, SupportedExtensions: basicExtensions}
@@ -142,7 +139,6 @@ func TestThatFilesAreCopiedToTargetDir(t *testing.T) {
 
 	//GIVEN
 	var testDir string = path.Join(basicTestDir, "subdir", "subsubdir")
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
@@ -162,7 +158,6 @@ func TestThatFilesAreCopiedAndSortedAccordingToCreationDate(t *testing.T) {
 
 	//GIVEN
 	var testDir string = path.Join(basicTestDir, "subdir", "subsubdir")
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
@@ -185,7 +180,6 @@ func TestThatFilesAreCopiedAndSortedAccordingToCreationDate(t *testing.T) {
 func TestCopyFilesWithEqualFileNames(t *testing.T) {
 
 	//GIVEN
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 	file.CollectFiles(basicTestDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
@@ -395,7 +389,6 @@ func TestPerpareCopyCreatesDescJsonWithCorrectOperationType(t *testing.T) {
 
 	//GIVEN
 	var testDir string = path.Join(basicTestDir, "subdir", "subsubdir")
-	fmt.Println(os.Getwd())
 	var filesToCopy []model.FileInfo
 	file.CollectFiles(testDir, &filesToCopy, basicCollectConfig)
 	tempDir := t.TempDir()
